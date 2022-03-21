@@ -10,13 +10,13 @@ Options:
 """
 
 import tkinter as tk
-from tkinter import ttk
-from tkinter.messagebox import showinfo
 from docopt import docopt
 import ctypes
 from witchcrafted.settings import Settings
-from pathlib import Path
+from witchcrafted.setup import SetupFrame
+from witchcrafted.utils import MainFrames
 
+from pathlib import Path
 
 try:  # Windows 8.1 and later
     ctypes.windll.shcore.SetProcesspiAwareness(2)
@@ -35,25 +35,38 @@ class App(tk.Tk):
         """Init the app."""
         super().__init__()
         self.settings = Settings(Path("./settings.yaml"))
+        self.app = self
 
+        self.app_init()
+
+        self.frame_init()
+
+    def app_init(self):
+        """Initialise the settings of the app."""
         (screen_width, screen_height) = self.get_display_size()
 
         # configure the root window
         self.title("Witchcrafted")
         self.geometry(f"{screen_width}x{screen_height}")
 
-        # label
-        self.label = ttk.Label(self, text="Hello, Tkinter!")
-        self.label.pack()
+    def frame_init(self):
+        """Create the various primary app frames."""
+        self.main_frames = {MainFrames.SETUP: SetupFrame(self)}
 
-        # button
-        self.button = ttk.Button(self, text="Click Me")
-        self.button["command"] = self.button_clicked
-        self.button.pack()
+        for frame in self.main_frames.values():
+            frame.grid(column=0, row=0, padx=5, pady=5, sticky="nsew")
 
-    def button_clicked(self):
-        """Show a message."""
-        showinfo(title="Information", message="Hello, Tkinter!")
+        if not self.settings.setup:
+            self.main_frame = MainFrames.SETUP
+        else:
+            self.main_frame = MainFrames.LOADING
+
+        self.switch_frame()
+
+    def switch_frame(self):
+        """Switch to the current frame."""
+        self.main_frames[self.main_frame].reset()
+        self.main_frames[self.main_frame].tkraise()
 
     def get_display_size(self):
         """Get the current display size."""
