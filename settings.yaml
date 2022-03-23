@@ -3,3 +3,4 @@ out_dir: ./masterduel/output
 settings_version: 0.0.1
 setup: true
 source_dir: ./masterduel/originals
+debug: true

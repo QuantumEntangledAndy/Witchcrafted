@@ -16,7 +16,7 @@ class Settings:
         "setup",
         "settings_version",
     ]
-    yaml_defaults = {"debug": True}
+    yaml_defaults = {"debug": False}
 
     default_settings = """
     settings_version: "0.0.1"

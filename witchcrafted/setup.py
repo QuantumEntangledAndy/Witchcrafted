@@ -82,7 +82,7 @@ class ButtonsFrame(AppFrame):
     def ok_pressed(self):
         """Act on pressing ok."""
         self.settings.setup = True
-        self.switch_to(MainFrames.LOADING)
+        self.switch_to(MainFrames.CARDS)
 
 
 class SetupFrame(AppFrame):

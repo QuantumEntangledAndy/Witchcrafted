@@ -11,6 +11,7 @@ UnityPy = "^1.7.43"
 docopt = "^0.6.2"
 tk = "^0.1.0"
 PyYAML = "^6.0"
+pandas = "^1.4.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

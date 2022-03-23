@@ -14,6 +14,7 @@ from docopt import docopt
 import ctypes
 from witchcrafted.settings import Settings
 from witchcrafted.setup import SetupFrame
+from witchcrafted.cards import CardsFrame
 from witchcrafted.utils import MainFrames
 
 from pathlib import Path
@@ -37,6 +38,10 @@ class App(tk.Tk):
         self.settings = Settings(Path("./settings.yaml"))
         self.app = self
 
+        if self.settings.debug:
+            style = tk.ttk.Style()
+            style.theme_use("classic")
+
         self.app_init()
 
         self.frame_init()
@@ -51,7 +56,10 @@ class App(tk.Tk):
 
     def frame_init(self):
         """Create the various primary app frames."""
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=1)
         self.main_frames = {MainFrames.SETUP: SetupFrame(self)}
+        self.main_frames = {MainFrames.CARDS: CardsFrame(self)}
 
         for frame in self.main_frames.values():
             frame.grid(column=0, row=0, padx=5, pady=5, sticky="nsew")
@@ -59,7 +67,7 @@ class App(tk.Tk):
         if not self.settings.setup:
             self.main_frame = MainFrames.SETUP
         else:
-            self.main_frame = MainFrames.LOADING
+            self.main_frame = MainFrames.CARDS
 
         self.switch_frame()
 
