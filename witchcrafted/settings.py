@@ -5,7 +5,7 @@ from pathlib import Path
 from witchcrafted.utils import multiline_strip
 
 
-class Settings:
+class Settings(object):
     """Settings class."""
 
     yaml_properties = [
@@ -26,8 +26,19 @@ class Settings:
     setup: False
     """
 
-    def __init__(self, file_name):
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """Create or load the singleton."""
+        if cls._instance is None:
+            print("Creating the object")
+            cls._instance = super().__new__(cls)
+            cls.__init__(cls)
+        return cls._instance
+
+    def __init__(self):
         """Create the settings from a file."""
+        file_name = Path("./settings.yaml")
         file_path = Path(file_name)
         if not file_path.exists():
             default_settings = multiline_strip(type(self).default_settings)

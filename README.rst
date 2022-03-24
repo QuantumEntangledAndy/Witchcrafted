@@ -30,4 +30,4 @@ edit as much as UnityPy allows me to. Which right now is:
 - MonoBehaviour (and all other types that you have the typetree of)
 
 Seems like other assets are on the roadmap and once UnityPy has other capabilities
-I see if I can update. Or you can PR it you know.
+I will see if I can update. Or you can PR it you know.

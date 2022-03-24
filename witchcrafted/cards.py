@@ -1,28 +1,106 @@
 """Infinite scrolling list of cards."""
 
-import tkinter as tk
 from tkinter import ttk
-from witchcrafted.utils import AppFrame, grouper, clamp
-from witchcrafted.scrollable import ScrollableFrame
+from witchcrafted.utils import AppFrame, clamp
 import pandas as pd
-import math
+from threading import Thread
+import UnityPy
+from pathlib import Path
+from PIL import ImageTk, Image
+
+
+class AsyncLoadPicture(Thread):
+    """Async load picture from the game files."""
+
+    def __init__(self, root_path, card_data):
+        """Init with the card data."""
+        super().__init__()
+        self.image = None
+        self.card_data = card_data
+        self.root_path = Path(root_path)
+
+    def run(self):
+        """Run this code on the thread."""
+        top_level_folder = self.card_data["Folder Name"]
+        tcg_file_name = self.card_data["File, TCG"]
+        tcg_file_prefix = tcg_file_name[0:2]
+        file_path_tcg = self.root_path.joinpath(
+            top_level_folder, tcg_file_prefix, tcg_file_name
+        )
+        ocg_file_name = self.card_data["File, OCG"]
+        ocg_file_prefix = ocg_file_name[0:2]
+        file_path_ocg = self.root_path.joinpath(
+            top_level_folder, ocg_file_prefix, ocg_file_name
+        )
+
+        if file_path_tcg.exists():
+            file_path = file_path_tcg
+        elif file_path_ocg.exists():
+            file_path = file_path_ocg
+        else:
+            return
+        env = UnityPy.load(f"{file_path}")
+        for obj in env.objects:
+            if obj.type.name in ["Texture2D"]:
+                data = obj.read()
+                path = obj.container
+                if path is None:
+                    path = data.name
+                resouce_name = Path(path).stem
+                card_id = str(self.card_data["Card ID"])
+                if resouce_name == card_id:
+                    self.image = data.image
 
 
 class CardBoard(AppFrame):
     """A card frame."""
 
-    WIDTH = 200
-    HEIGHT = 200
-
-    def __init__(self, container, card_id):
+    def __init__(self, container, card_data):
         """Init a card."""
-        super().__init__(container, height=type(self).HEIGHT, width=type(self).WIDTH)
+        super().__init__(container)
 
-        self.id = card_id
-        if self.id is not None:
-            ttk.Label(self, text=f"{self.id}").place(
-                relx=0.5, rely=0.5, anchor="center"
-            )
+        self.card_data = card_data
+        if self.card_data is not None:
+            card_id = self.card_data["Card ID"]
+            ttk.Label(self, text=f"{card_id}").place(relx=0.0, rely=0.0, anchor="nw")
+            self.load_image()
+
+    def load_image(self):
+        """Load an image."""
+        thread = AsyncLoadPicture(self.settings.source_dir, self.card_data)
+        thread.start()
+        self.monitor(thread)
+
+    def monitor(self, thread):
+        """Monitor another thread for finish."""
+        width = self.winfo_width()
+        height = self.winfo_height()
+        if thread.is_alive() or width <= 1 or height <= 1:
+            # check the thread every 100ms
+            self.after(100, lambda: self.monitor(thread))
+            self.update()
+        else:
+            image = thread.image
+            self.image = image
+            target_size = min(width, height)
+
+            im_width, im_height = image.size
+            if im_width > im_height:
+                scale = target_size / im_width
+            else:
+                scale = target_size / im_height
+
+            new_width = int(im_width * scale)
+            new_height = int(im_height * scale)
+
+            thumbnail = image.resize((new_width, new_height), Image.BICUBIC)
+
+            self.thumbnail = ImageTk.PhotoImage(thumbnail)
+
+            if image is not None:
+                ttk.Label(self, image=self.thumbnail).place(
+                    relx=0.5, rely=0.5, anchor="center"
+                )
 
 
 class CardRoads(AppFrame):
@@ -79,7 +157,7 @@ class CardRoads(AppFrame):
         self.update_scrollbar_limits()
 
     def cycle(self):
-        """Used for delayed updates."""
+        """Update the cycle number used for delayed-postponable updates."""
         self._frame_number += 1
         self.after(10, self.cycle)
 
@@ -146,9 +224,9 @@ class CardRoads(AppFrame):
         start = int(max((first_card_id - padding), 0))
         end = int(min((last_card_id + padding) + 1, max_cards))
         cards = self.card_list[start:end]
-        for idx, card_id in cards["Card ID"].iteritems():
+        for idx, card_data in cards.iterrows():
             if idx not in self.card_frames:
-                self.card_frames[idx] = CardBoard(self, card_id)
+                self.card_frames[idx] = CardBoard(self, card_data.to_dict())
 
         card_frame_width = 1.0 / card_layout[0]
         card_frame_height = 1.0 / card_layout[1]

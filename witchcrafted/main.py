@@ -17,8 +17,6 @@ from witchcrafted.setup import SetupFrame
 from witchcrafted.cards import CardsFrame
 from witchcrafted.utils import MainFrames
 
-from pathlib import Path
-
 try:  # Windows 8.1 and later
     ctypes.windll.shcore.SetProcesspiAwareness(2)
 except Exception:
@@ -35,7 +33,7 @@ class App(tk.Tk):
     def __init__(self, opts):
         """Init the app."""
         super().__init__()
-        self.settings = Settings(Path("./settings.yaml"))
+        self.settings = Settings()
         self.app = self
 
         if self.settings.debug:
