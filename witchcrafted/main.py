@@ -12,6 +12,9 @@ Options:
 import tkinter as tk
 from docopt import docopt
 import ctypes
+import asyncio
+import concurrent.futures
+
 from witchcrafted.settings import Settings
 from witchcrafted.setup import SetupFrame
 from witchcrafted.cards import CardsFrame
@@ -35,6 +38,9 @@ class App(tk.Tk):
         super().__init__()
         self.settings = Settings()
         self.app = self
+        self.async_tasks = []
+        self.thread_tasks = []
+        self.excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
 
         if self.settings.debug:
             style = tk.ttk.Style()
@@ -43,6 +49,55 @@ class App(tk.Tk):
         self.app_init()
 
         self.frame_init()
+
+    def run(self):
+        """Run with asyncio."""
+        self.loop = asyncio.get_event_loop()
+        self.protocol("WM_DELETE_WINDOW", (lambda: self.loop.create_task(self.close())))
+        self.tasks = []
+        interval = tk._tkinter.getbusywaitinterval() / 1000.0
+        self.async_task(self.updater(interval))
+
+        self.loop.run_forever()
+        self.loop.close()
+
+    def async_task(self, task):
+        """Run an asyncio task."""
+        handle = self.loop.create_task(task)
+        self.async_tasks.append(handle)
+        return handle
+
+    def thread_task(self, task):
+        """Run an thread task on the pool."""
+        handle = self.excecutor.submit(task)
+        self.thread_tasks.append(handle)
+        return handle
+
+    async def updater(self, interval):
+        """Run a pseudo tkinter mainloop."""
+        self.tk.willdispatch()
+        while True:
+            self.update()
+            await asyncio.sleep(interval)
+
+    async def close(self):
+        """Close the app and stop all asyncio tasks."""
+        # Cancel asyncio
+        for task in self.async_tasks:
+            task.cancel()
+        # Await clean exit
+        interval = tk._tkinter.getbusywaitinterval() / 1000.0
+        while any(map(lambda x: not x.done(), self.async_tasks)):
+            await asyncio.sleep(interval)
+        self.loop.stop()
+
+        # Cancel all thread pools
+        for task in self.thread_tasks:
+            task.cancel()
+
+        self.excecutor.shutdown(wait=True, cancel_futures=True)
+
+        self.destroy()
 
     def app_init(self):
         """Initialise the settings of the app."""
@@ -86,7 +141,7 @@ class App(tk.Tk):
 def main(opts):
     """Run the program."""
     app = App(opts)
-    app.mainloop()
+    app.run()
 
 
 if __name__ == "__main__":

@@ -50,3 +50,18 @@ class AsyncLoadData(Thread):
                 card_id = str(self.card_data["Card ID"])
                 if resouce_name == card_id:
                     self.image = data.image
+
+
+class CardData:
+    """Data of an individual card."""
+
+    def __init__(self):
+        """Create a dummy card."""
+        self.card_id = None
+
+    @classmethod
+    def from_csv_data(cls, data):
+        """Load from csv data."""
+        result = cls()
+        result.card_id = data["Card ID"]
+        result.image = None
