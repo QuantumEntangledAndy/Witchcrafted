@@ -1,106 +1,9 @@
-"""Infinite scrolling list of cards."""
+"""Gui for the row of individual gui cards."""
 
-from tkinter import ttk
-from witchcrafted.utils import AppFrame, clamp
 import pandas as pd
-from threading import Thread
-import UnityPy
-from pathlib import Path
-from PIL import ImageTk, Image
 
-
-class AsyncLoadPicture(Thread):
-    """Async load picture from the game files."""
-
-    def __init__(self, root_path, card_data):
-        """Init with the card data."""
-        super().__init__()
-        self.image = None
-        self.card_data = card_data
-        self.root_path = Path(root_path)
-
-    def run(self):
-        """Run this code on the thread."""
-        top_level_folder = self.card_data["Folder Name"]
-        tcg_file_name = self.card_data["File, TCG"]
-        tcg_file_prefix = tcg_file_name[0:2]
-        file_path_tcg = self.root_path.joinpath(
-            top_level_folder, tcg_file_prefix, tcg_file_name
-        )
-        ocg_file_name = self.card_data["File, OCG"]
-        ocg_file_prefix = ocg_file_name[0:2]
-        file_path_ocg = self.root_path.joinpath(
-            top_level_folder, ocg_file_prefix, ocg_file_name
-        )
-
-        if file_path_tcg.exists():
-            file_path = file_path_tcg
-        elif file_path_ocg.exists():
-            file_path = file_path_ocg
-        else:
-            return
-        env = UnityPy.load(f"{file_path}")
-        for obj in env.objects:
-            if obj.type.name in ["Texture2D"]:
-                data = obj.read()
-                path = obj.container
-                if path is None:
-                    path = data.name
-                resouce_name = Path(path).stem
-                card_id = str(self.card_data["Card ID"])
-                if resouce_name == card_id:
-                    self.image = data.image
-
-
-class CardBoard(AppFrame):
-    """A card frame."""
-
-    def __init__(self, container, card_data):
-        """Init a card."""
-        super().__init__(container)
-
-        self.card_data = card_data
-        if self.card_data is not None:
-            card_id = self.card_data["Card ID"]
-            ttk.Label(self, text=f"{card_id}").place(relx=0.0, rely=0.0, anchor="nw")
-            self.load_image()
-
-    def load_image(self):
-        """Load an image."""
-        thread = AsyncLoadPicture(self.settings.source_dir, self.card_data)
-        thread.start()
-        self.monitor(thread)
-
-    def monitor(self, thread):
-        """Monitor another thread for finish."""
-        width = self.winfo_width()
-        height = self.winfo_height()
-        if thread.is_alive() or width <= 1 or height <= 1:
-            # check the thread every 100ms
-            self.after(100, lambda: self.monitor(thread))
-            self.update()
-        else:
-            image = thread.image
-            self.image = image
-            target_size = min(width, height)
-
-            im_width, im_height = image.size
-            if im_width > im_height:
-                scale = target_size / im_width
-            else:
-                scale = target_size / im_height
-
-            new_width = int(im_width * scale)
-            new_height = int(im_height * scale)
-
-            thumbnail = image.resize((new_width, new_height), Image.BICUBIC)
-
-            self.thumbnail = ImageTk.PhotoImage(thumbnail)
-
-            if image is not None:
-                ttk.Label(self, image=self.thumbnail).place(
-                    relx=0.5, rely=0.5, anchor="center"
-                )
+from witchcrafted.utils import AppFrame, clamp
+from witchcrafted.cards.card_board import CardBoard
 
 
 class CardRoads(AppFrame):
@@ -253,22 +156,3 @@ class CardRoads(AppFrame):
             self.card_frames[del_this].place_forget()
             self.card_frames[del_this].destroy()
             del self.card_frames[del_this]
-
-
-class CardsFrame(AppFrame):
-    """The cards frame."""
-
-    def __init__(self, container):
-        """Init the frame."""
-        super().__init__(container)
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_columnconfigure(1, weight=0)
-
-        self.card_area = CardRoads(self)
-        self.card_area.grid(column=0, row=0, padx=5, pady=5, sticky="nsew")
-        self.scrollbar = ttk.Scrollbar(
-            self, orient="vertical", command=self.card_area.yview
-        )
-        self.scrollbar.grid(column=1, row=0, padx=0, pady=0, sticky="ns")
-        self.card_area.scrollbar = self.scrollbar

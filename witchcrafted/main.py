@@ -56,8 +56,10 @@ class App(tk.Tk):
         """Create the various primary app frames."""
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
-        self.main_frames = {MainFrames.SETUP: SetupFrame(self)}
-        self.main_frames = {MainFrames.CARDS: CardsFrame(self)}
+        self.main_frames = {
+            MainFrames.SETUP: SetupFrame(self),
+            MainFrames.CARDS: CardsFrame(self),
+        }
 
         for frame in self.main_frames.values():
             frame.grid(column=0, row=0, padx=5, pady=5, sticky="nsew")

@@ -53,6 +53,7 @@ class AppFrame(ttk.Frame):
         super().__init__(container, *args, **kwargs)
         self.settings = container.settings
         self.app = container.app
+        self.parent = container
 
         # for col in range(0, 20):
         #     self.columnconfigure(col, weight=1)
