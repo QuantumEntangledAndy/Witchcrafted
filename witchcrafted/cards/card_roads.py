@@ -1,9 +1,8 @@
 """Gui for the row of individual gui cards."""
 
-import pandas as pd
-
-from witchcrafted.utils import AppFrame, clamp
+from witchcrafted.utils import AppFrame, clamp, Async
 from witchcrafted.cards.card_board import CardBoard
+from witchcrafted.cards.card_data import LoadData
 
 
 class CardRoads(AppFrame):
@@ -48,21 +47,13 @@ class CardRoads(AppFrame):
     def __init__(self, container):
         """Init the frame."""
         super().__init__(container)
-        df = pd.read_csv("assets/card_list.csv")
-        self.card_list = df[(df["Folder Name"] == "0000")]
-        self.card_list.reset_index(inplace=True)
+        self.card_list = LoadData.main_cards_ids()
+
         self.card_frames = {}
         self._frame_number = 0
-        self.cycle()
 
         # This is a property everything should be ready before setting it
         self.card_number = 0.0
-        self.update_scrollbar_limits()
-
-    def cycle(self):
-        """Update the cycle number used for delayed-postponable updates."""
-        self._frame_number += 1
-        self.after(10, self.cycle)
 
     def set_card_number(self, value):
         """Set the card number."""
@@ -70,7 +61,6 @@ class CardRoads(AppFrame):
 
     def yview(self, *args):
         """Scroll bar update."""
-        print(args)
         if args[0] == "moveto":
             max_cards = len(self.card_list)
             card_number = clamp(float(args[1]), 0.0, 1.0) * max_cards
@@ -105,15 +95,11 @@ class CardRoads(AppFrame):
 
     def delayed_update_card_frames(self):
         """Delay update."""
-        if self._frame_number >= self.next_update:
-            self.update_card_frames()
-        else:
-            self.after(50, self.delayed_update_card_frames)
+        Async().async_task(self.update_card_frames())
 
-    def update_card_frames(self):
+    async def update_card_frames(self):
         """Update rows of cards."""
         card_number = self.card_number
-        print(f"Update to {card_number}")
 
         first_card_id = int(card_number)
         card_layout = self.card_layout()
@@ -127,6 +113,7 @@ class CardRoads(AppFrame):
         start = int(max((first_card_id - padding), 0))
         end = int(min((last_card_id + padding) + 1, max_cards))
         cards = self.card_list[start:end]
+
         for idx, card_data in cards.iterrows():
             if idx not in self.card_frames:
                 self.card_frames[idx] = CardBoard(self, card_data.to_dict())

@@ -4,6 +4,8 @@ from tkinter import ttk
 from enum import Enum
 from itertools import zip_longest
 from random import randint, choice
+import asyncio
+import concurrent.futures
 
 
 def grouper(iterable, n, *, incomplete="fill", fillvalue=None):
@@ -75,3 +77,85 @@ class AppFrame(ttk.Frame):
     def reset(self):
         """Reset the frame."""
         # Should be overloaded
+
+    async def await_size(self):
+        """Wait until this frame has a size."""
+        while self.winfo_width() == 1 and self.winfo_height() == 1:
+            self.update()
+            await asyncio.sleep(0.01)
+        return (self.winfo_width(), self.winfo_height())
+
+
+class Async(object):
+    """Object to handle asyncio and threadpool threads."""
+
+    __instance = None
+
+    def __new__(cls):
+        """Create the singleton."""
+        if cls.__instance is None:
+            cls.__instance = object.__new__(cls)
+
+        cls.__instance.async_tasks = []
+        cls.__instance.thread_tasks = []
+        cls.__instance.loop = asyncio.get_event_loop()
+        cls.__instance.excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+
+        return cls.__instance
+
+    def async_fire(self, task):
+        """Run a task in async but don't handle a handle to it."""
+        handle = self.loop.create_task(task)
+        return handle
+
+    def async_task(self, task):
+        """Run an asyncio task."""
+        handle = self.async_fire(task)
+        self.async_tasks.append(handle)
+        return handle
+
+    async def async_thread(self, task):
+        """Run an thread and async await its completion."""
+        task = self.thread_task(task)
+        while not task.done():
+            await asyncio.sleep(0.01)
+
+        try:
+            return task.result()
+        except concurrent.futures.CancelledError:
+            return None
+        except Exception as e:
+            raise e
+
+    def thread_fire(self, task):
+        """Run an thread task on the pool but don't handle a handle to it."""
+        handle = self.excecutor.submit(task)
+        return handle
+
+    def thread_task(self, task):
+        """Run an thread task on the pool."""
+        handle = self.thread_fire(task)
+        self.thread_tasks.append(handle)
+        return handle
+
+    async def shutdown(self):
+        """Shutdown the async and threadpool."""
+        # Cancel asyncio
+        for task in self.async_tasks:
+            task.cancel()
+        # Await clean exit
+        interval = 0.01
+        while any(map(lambda x: not x.done(), self.async_tasks)):
+            await asyncio.sleep(interval)
+        self.loop.stop()
+
+        # Cancel all thread pools
+        for task in self.thread_tasks:
+            task.cancel()
+
+        self.excecutor.shutdown(wait=True, cancel_futures=True)
+
+    def run(self):
+        """Run the loop."""
+        self.loop.run_forever()
+        self.loop.close()

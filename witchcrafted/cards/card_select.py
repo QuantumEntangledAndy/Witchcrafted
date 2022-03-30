@@ -10,7 +10,11 @@ class CardsSelect(AppFrame):
     """The cards frame."""
 
     def __init__(self, container):
-        """Init the frame."""
+        """
+        Init the frame.
+
+        This shows the card selection area and it's scrollbar.
+        """
         super().__init__(container)
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)

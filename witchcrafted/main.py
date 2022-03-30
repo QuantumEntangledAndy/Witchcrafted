@@ -13,12 +13,11 @@ import tkinter as tk
 from docopt import docopt
 import ctypes
 import asyncio
-import concurrent.futures
 
 from witchcrafted.settings import Settings
 from witchcrafted.setup import SetupFrame
 from witchcrafted.cards import CardsFrame
-from witchcrafted.utils import MainFrames
+from witchcrafted.utils import MainFrames, Async
 
 try:  # Windows 8.1 and later
     ctypes.windll.shcore.SetProcesspiAwareness(2)
@@ -38,39 +37,31 @@ class App(tk.Tk):
         super().__init__()
         self.settings = Settings()
         self.app = self
-        self.async_tasks = []
-        self.thread_tasks = []
-        self.excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+
+        self.protocol("WM_DELETE_WINDOW", (lambda: Async().async_fire(self.close())))
 
         if self.settings.debug:
             style = tk.ttk.Style()
             style.theme_use("classic")
 
         self.app_init()
-
         self.frame_init()
 
     def run(self):
         """Run with asyncio."""
-        self.loop = asyncio.get_event_loop()
-        self.protocol("WM_DELETE_WINDOW", (lambda: self.loop.create_task(self.close())))
-        self.tasks = []
         interval = tk._tkinter.getbusywaitinterval() / 1000.0
         self.async_task(self.updater(interval))
 
-        self.loop.run_forever()
-        self.loop.close()
+        Async().run()
 
     def async_task(self, task):
         """Run an asyncio task."""
-        handle = self.loop.create_task(task)
-        self.async_tasks.append(handle)
+        handle = Async().async_task(task)
         return handle
 
     def thread_task(self, task):
-        """Run an thread task on the pool."""
-        handle = self.excecutor.submit(task)
-        self.thread_tasks.append(handle)
+        """Run a thread task on the pool."""
+        handle = Async().thread_task(task)
         return handle
 
     async def updater(self, interval):
@@ -82,20 +73,7 @@ class App(tk.Tk):
 
     async def close(self):
         """Close the app and stop all asyncio tasks."""
-        # Cancel asyncio
-        for task in self.async_tasks:
-            task.cancel()
-        # Await clean exit
-        interval = tk._tkinter.getbusywaitinterval() / 1000.0
-        while any(map(lambda x: not x.done(), self.async_tasks)):
-            await asyncio.sleep(interval)
-        self.loop.stop()
-
-        # Cancel all thread pools
-        for task in self.thread_tasks:
-            task.cancel()
-
-        self.excecutor.shutdown(wait=True, cancel_futures=True)
+        await Async().shutdown()
 
         self.destroy()
 

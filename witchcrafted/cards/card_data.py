@@ -4,32 +4,71 @@ Card data.
 This is loaded from database or from the game files.
 """
 
-from threading import Thread
 import UnityPy
 from pathlib import Path
+import pandas as pd
+import threading
+import asyncio
+
+from witchcrafted.settings import Settings
+from witchcrafted.utils import Async
 
 
-class AsyncLoadData(Thread):
-    """Async load picture etc from the game files."""
+class LoadData:
+    """Load picture etc from the game files."""
 
-    def __init__(self, root_path, card_data):
-        """Init with the card data."""
-        super().__init__()
-        self.image = None
-        self.card_data = card_data
-        self.root_path = Path(root_path)
+    _lock = threading.Lock()
 
-    def run(self):
-        """Run this code on the thread."""
-        top_level_folder = self.card_data["Folder Name"]
-        tcg_file_name = self.card_data["File, TCG"]
+    __df = None
+    __df_common = None
+
+    @classmethod
+    def cards_data(cls):
+        """Get pandas data on all cards."""
+        if cls.__df is None:
+            with cls._lock:
+                if cls.__df is None:
+                    cls.__df = pd.read_csv("assets/card_list.csv")
+        return cls.__df
+
+    @classmethod
+    def main_cards_data(cls):
+        """Get pandas data on the cards in the 0000 folder."""
+        if cls.__df_common is None:
+            df = cls.cards_data()
+            card_list = df[(df["Folder Name"] == "0000")]
+            card_list.reset_index(inplace=True)
+            with cls._lock:
+                if cls.__df_common is None:
+                    cls.__df_common = card_list
+        return cls.__df_common
+
+    @classmethod
+    def main_cards_ids(cls):
+        """Get card IDs."""
+        df = cls.main_cards_data()
+        return df[["Card ID"]]
+
+    @classmethod
+    def image(cls, card_id):
+        """Load an image using pandas data and a card id."""
+        """Get image data from game files."""
+        df = cls.cards_data()
+
+        card_data = df.loc[df["Card ID"] == card_id].iloc[0].to_dict()
+        top_level_folder = card_data["Folder Name"]
+        tcg_file_name = card_data["File, TCG"]
+        ocg_file_name = card_data["File, OCG"]
+
         tcg_file_prefix = tcg_file_name[0:2]
-        file_path_tcg = self.root_path.joinpath(
+        settings = Settings()
+        root_dir = Path(settings.source_dir)
+        file_path_tcg = root_dir.joinpath(
             top_level_folder, tcg_file_prefix, tcg_file_name
         )
-        ocg_file_name = self.card_data["File, OCG"]
+
         ocg_file_prefix = ocg_file_name[0:2]
-        file_path_ocg = self.root_path.joinpath(
+        file_path_ocg = root_dir.joinpath(
             top_level_folder, ocg_file_prefix, ocg_file_name
         )
 
@@ -39,6 +78,7 @@ class AsyncLoadData(Thread):
             file_path = file_path_ocg
         else:
             return
+
         env = UnityPy.load(f"{file_path}")
         for obj in env.objects:
             if obj.type.name in ["Texture2D"]:
@@ -47,21 +87,46 @@ class AsyncLoadData(Thread):
                 if path is None:
                     path = data.name
                 resouce_name = Path(path).stem
-                card_id = str(self.card_data["Card ID"])
+                card_id = str(card_id)
                 if resouce_name == card_id:
-                    self.image = data.image
+                    return data.image
+        return None
 
 
 class CardData:
     """Data of an individual card."""
 
-    def __init__(self):
-        """Create a dummy card."""
-        self.card_id = None
+    _lock = threading.Lock()
+    _async_lock = asyncio.Lock()
+    _card_data_store = {}
 
-    @classmethod
-    def from_csv_data(cls, data):
-        """Load from csv data."""
-        result = cls()
-        result.card_id = data["Card ID"]
-        result.image = None
+    def __init__(self, card_id):
+        """Create a dummy card."""
+        self.card_id = card_id
+        self.update_data()
+
+    def update_data(self):
+        """Get or load from global csv data."""
+        cls = type(self)
+        card_id = self.card_id
+        if card_id not in cls._card_data_store:
+            with cls._lock:
+                if card_id not in cls._card_data_store:
+                    df = LoadData.main_cards_data()
+                    df = LoadData.main_cards_data()
+                    cls._card_data_store[card_id] = (
+                        df[(df["Card ID"] == card_id)].iloc[0].to_dict()
+                    )
+
+        self.data = cls._card_data_store[card_id]
+
+    async def get_image(self):
+        """Get the image."""
+        if "image" not in self.data:
+            cls = type(self)
+            async with cls._async_lock:
+                if "image" not in self.data:
+                    self.data["image"] = await Async().async_thread(
+                        lambda: LoadData.image(self.card_id)
+                    )
+        return self.data["image"]
