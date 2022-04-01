@@ -73,8 +73,22 @@ class Async(object):
         cls.__instance.thread_tasks = []
         cls.__instance.loop = asyncio.get_event_loop()
         cls.__instance.excecutor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
-        # cls.__instance.loop.set_exception_handler(cls.__instance.handle_exception)
+        cls.__instance.loop.set_exception_handler(cls.__instance.handle_exception)
         return cls.__instance
+
+    def handle_exception(self, loop, context):
+        """Handle an asyncio error."""
+        e = context.get("exception", None)
+        if e is not None:
+            self.shutdown()
+            if isinstance(e, KeyboardInterrupt):
+                pass
+            else:
+                logger.error(f"Caught exception: {e}", stack_info=True)
+                logger.info("Shutting down from exception.")
+                raise e
+        else:
+            logger.warn(context["message"])
 
     def async_fire(self, task):
         """Run a task in async but don't handle a handle to it."""

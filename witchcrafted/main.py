@@ -52,6 +52,8 @@ class WitchcraftedApp(KivyApp):
         """Run the loop async."""
         try:
             await super().async_run(*args, **kwargs)
+        except KeyboardInterrupt:
+            pass
         finally:
             Async().shutdown()
 
