@@ -37,3 +37,9 @@ class CardEdit(GridLayout):
                 image.save(buf, format="PNG")
                 buf.seek(0)
                 self.card_image = CoreImage(buf, ext="png")
+
+    def export_image(self):
+        """Export the image."""
+
+    def import_image(self):
+        """Import an image."""

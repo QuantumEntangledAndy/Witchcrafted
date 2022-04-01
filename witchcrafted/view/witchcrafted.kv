@@ -74,11 +74,26 @@ MainPanel:
             card_image: None
             card_name: None
 
+            ActionBar:
+                size_hint: 1., 0.1
+                ActionView:
+                    use_separator: True
+                    ActionPrevious:
+                        title: 'Edit'
+                        with_previous: False
+                    ActionOverflow:
+                    ActionButton:
+                        text: 'Export'
+                        on_release: card_edit.export_image()
+                    ActionButton:
+                        text: 'Import'
+                        on_release: card_edit.import_image()
+
             Label:
                 size_hint: 1., 0.1
-                text: f"Editing {card_edit.card_id}: {card_edit.card_name}"
+                text: f"{card_edit.card_id}: {card_edit.card_name}"
             Image:
-                size_hint: 1., 0.9
+                size_hint: 1., 0.8
                 source: ""
                 allow_stretch: True
                 texture: card_edit.card_image.texture if card_edit.card_image is not None else card_edit.card_image
