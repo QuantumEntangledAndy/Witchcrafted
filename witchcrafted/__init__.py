@@ -1,9 +1,9 @@
 """Masterduel modding tool."""
 __version__ = "0.1.0"
 
-from . import main, cards, settings, setup, utils
+from . import main, cards, utils, main_panel
 
-__all__ = [main, cards, settings, setup, utils]
+__all__ = [main, cards, utils, main_panel]
 
 
 def app():

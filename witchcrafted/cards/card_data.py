@@ -10,7 +10,8 @@ import pandas as pd
 import threading
 import asyncio
 
-from witchcrafted.settings import Settings
+from kivy.app import App
+
 from witchcrafted.utils import Async
 
 
@@ -52,8 +53,9 @@ class LoadData:
     @classmethod
     def image(cls, card_id):
         """Load an image using pandas data and a card id."""
-        """Get image data from game files."""
         df = cls.cards_data()
+        app = App.get_running_app()
+        root_dir = Path(app.config.get("paths", "source"))
 
         card_data = df.loc[df["Card ID"] == card_id].iloc[0].to_dict()
         top_level_folder = card_data["Folder Name"]
@@ -61,8 +63,6 @@ class LoadData:
         ocg_file_name = card_data["File, OCG"]
 
         tcg_file_prefix = tcg_file_name[0:2]
-        settings = Settings()
-        root_dir = Path(settings.source_dir)
         file_path_tcg = root_dir.joinpath(
             top_level_folder, tcg_file_prefix, tcg_file_name
         )
@@ -119,6 +119,10 @@ class CardData:
                     )
 
         self.data = cls._card_data_store[card_id]
+
+    async def get_name(self):
+        """Get the card name."""
+        return self.data["English Name"]
 
     async def get_image(self):
         """Get the image."""

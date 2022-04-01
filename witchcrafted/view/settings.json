@@ -1,0 +1,27 @@
+[
+  {
+    "type": "title",
+    "title": "Settings"
+  },
+  {
+    "type": "path",
+    "title": "Source Dir",
+    "desc": "Files that are to be edited, should contain a 0000 folder at it's root",
+    "section": "paths",
+    "key": "source"
+  },
+  {
+    "type": "path",
+    "title": "Output Dir",
+    "desc": "Dir where edited files are saved to",
+    "section": "paths",
+    "key": "output"
+  },
+  {
+    "type": "bool",
+    "title": "Debug",
+    "desc": "Enable debug logs and view",
+    "section": "app",
+    "key": "debug"
+  }
+]

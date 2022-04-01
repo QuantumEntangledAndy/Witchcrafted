@@ -1,73 +1,56 @@
-"""Card view and edit gui."""
+"""
+The infinite scrolling card view.
 
-from tkinter import ttk
-from tkinter import filedialog as fd
-from PIL import ImageTk, Image
+Cards are selectable for edit.
+"""
 
-from witchcrafted.utils import AppFrame
+from kivy.uix.recycleview import RecycleView
+from kivy.properties import ObjectProperty, NumericProperty
+from witchcrafted.cards.card_data import LoadData
 
 
-class CardView(AppFrame):
-    """The cards frame."""
+class CardView(RecycleView):
+    """The scrolling cardview."""
 
-    def __init__(self, container):
-        """Init the frame."""
-        super().__init__(container)
-        self.card_data = None
-        self.image = None
+    card_grid = ObjectProperty(None)
+    num_of_cards = NumericProperty(0)
+    num_of_columns = NumericProperty(4)
+    num_of_rows = NumericProperty(4)
 
-        self.reset()
+    def __init__(self, **kwargs):
+        """Create data and build."""
+        super().__init__(**kwargs)
+        self.fill_data(10)
 
-        self.grid_rowconfigure(0, weight=0)
-        self.grid_rowconfigure(1, weight=1)
-        self.grid_columnconfigure(2, weight=1)
+    def scroll_data(self):
+        """Fill the grid with more cards."""
+        try:
+            top = (self.card_grid.top - self.y) / self.card_grid.height
+            if self.scroll_y * self.card_grid.height < self.height / 2:
+                self.fill_data(10)
+                y = top + self.height
+                self.scroll_y = y / self.card_grid.height
+        except Exception as e:
+            print(e)
+            raise e
 
-        ttk.Button(self, text="Import", command=(lambda: self.import_image())).grid(
-            column=0, row=0
+    def fill_data(self, num_of_rows):
+        """Fill so many rows of data."""
+        df = LoadData.main_cards_data()
+        df = df[
+            len(self.data) : len(self.data) + num_of_rows * self.num_of_columns  # noqa
+        ]
+
+        def map_data(card_row):
+            card_data = card_row[1].to_dict()
+            return {
+                "card_id": card_data["Card ID"],
+                "card_image": None,
+                "card_name": None,
+            }
+
+        data = map(
+            map_data,
+            df.iterrows(),
         )
-        ttk.Button(self, text="Export", command=(lambda: self.export_image())).grid(
-            column=1, row=0
-        )
-        ttk.Button(
-            self, text="Close", command=(lambda: self.parent.view_select())
-        ).grid(column=2, row=0, sticky="e")
-
-        self.image_label = ttk.Label(self)
-        self.image_label.grid(column=0, row=1, columnspan=3)
-
-    def export_image(self):
-        """Export the image."""
-        card_id = self.card_data["Card ID"]
-        file_name = fd.asksaveasfilename(
-            initialdir=self.settings.out_dir,
-            initialfile=f"{card_id}.bmp",
-            filetypes=(("Bitmap", "*.bmp"), ("PNG", "*.png")),
-            defaultextension=".bmp",
-        )
-        if file_name is not None and self.image is not None:
-            self.image.save(file_name)
-
-    def import_image(self):
-        """Export the image."""
-        card_id = self.card_data["Card ID"]
-        file_name = fd.askopenfilename(
-            initialdir=self.settings.out_dir,
-            initialfile=f"{card_id}.bmp",
-            filetypes=(("Bitmap", "*.bmp"), ("PNG", "*.png")),
-            defaultextension=".bmp",
-        )
-        if file_name is not None and self.image is not None:
-            imported_image = Image.open(file_name)
-            (imported_width, imported_height) = imported_image.size
-            (orig_width, orig_height) = self.image.size
-            imported_image.resize((orig_width, orig_height), Image.BICUBIC)
-            self.image = imported_image
-            self.reset()
-
-    def reset(self):
-        """Reset the card view."""
-        if self.card_data is not None:
-            if self.image is not None:
-                thumbnail = self.image
-                self.thumbnail = ImageTk.PhotoImage(thumbnail)
-                self.image_label.configure(image=self.thumbnail)
+        self.data.extend(data)
