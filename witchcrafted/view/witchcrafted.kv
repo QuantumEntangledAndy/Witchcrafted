@@ -26,6 +26,7 @@
     Image:
         id: image
         source: ""
+        allow_stretch: True
         texture: card_panel.card_image.texture if card_panel.card_image is not None else card_panel.card_image
 
 
@@ -76,6 +77,11 @@ MainPanel:
             Label:
                 size_hint: 1., 0.1
                 text: f"Editing {card_edit.card_id}: {card_edit.card_name}"
+            Image:
+                size_hint: 1., 0.9
+                source: ""
+                allow_stretch: True
+                texture: card_edit.card_image.texture if card_edit.card_image is not None else card_edit.card_image
 
     TabbedPanelItem:
         text: 'Settings'
