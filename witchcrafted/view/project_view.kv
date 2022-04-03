@@ -1,0 +1,41 @@
+<ProjectView>:
+    cols: 1
+    rows: 3
+
+    GridLayout:
+        cols: 2
+        rows: 2
+        size_hint: (1, 0.8)
+
+        Label:
+            text: "Name: "
+            size_hint: (0.2, None)
+            height: 60
+
+        TextInput:
+            multiline: False
+            size_hint: (0.8, None)
+            height: 60
+
+        Label:
+            text: "Description: "
+            size_hint: (0.2, 0.8)
+
+        TextInput:
+            multiline: True
+            size_hint: (0.8, 0.8)
+
+    GridLayout:
+        cols: 2
+        rows: 1
+        size_hint: (1, 0.2)
+
+        Button:
+            text: "Save"
+
+            on_release: self.save_project()
+
+        Button:
+            text: "Discard Changes"
+
+            on_release: self.discard_project()

@@ -3,9 +3,13 @@
 #: import CardPanel witchcrafted.cards.card_panel
 #: import CardEdit witchcrafted.cards.card_edit
 #: import MainPanel witchcrafted.main_panel
+#: import ProjectView witchcrafted.project.project_view
 
 #: include witchcrafted/view/card_panel.kv
 #: include witchcrafted/view/file_dialogs.kv
+#: include witchcrafted/view/card_view.kv
+#: include witchcrafted/view/card_edit.kv
+#: include witchcrafted/view/project_view.kv
 
 MainPanel:
     id: main_panel
@@ -14,15 +18,21 @@ MainPanel:
     do_default_tab: False
 
     selected_card_id: None
+
     card_view_tab: card_view_tab
-    card_edit_tab: card_edit_tab
     card_view: card_view
+
+    card_edit_tab: card_edit_tab
     card_edit: card_edit
+
+    project_tab: project_tab
+    project_view: project_view
 
     TabbedPanelItem:
         id: project_tab
         text: 'Project'
-
+        ProjectView:
+            id: project_view
 
 
     TabbedPanelItem:
@@ -30,21 +40,6 @@ MainPanel:
         text: 'Card Pool'
         CardView:
             id: card_view
-            on_scroll_y: self.scroll_data()
-            viewclass: 'CardPanel'
-
-            card_grid: card_grid
-            num_of_cards: 0
-            num_of_columns: 4
-            num_of_rows: 4
-
-            RecycleGridLayout:
-                id: card_grid
-                cols: card_view.num_of_columns
-                size_hint_y: None
-                height: self.minimum_height
-                default_size_hint: 1, None
-                default_size: 1, 400
 
     TabbedPanelItem:
         id: card_edit_tab
@@ -52,40 +47,6 @@ MainPanel:
         CardEdit:
             id: card_edit
 
-            cols: 1
-            rows: 3
-
-            card_id: app.selected_card_id
-            card_image: None
-            card_name: None
-
-            ActionBar:
-                size_hint: 1., 0.1
-                ActionView:
-                    use_separator: True
-                    ActionPrevious:
-                        title: 'Edit'
-                        with_previous: False
-                    ActionOverflow:
-                    ActionButton:
-                        text: 'Export'
-                        on_release: card_edit.export_image()
-                    ActionButton:
-                        text: 'Import'
-                        on_release: card_edit.import_image()
-
-            Label:
-                size_hint: 1., 0.1
-                text: f"{card_edit.card_id}: {card_edit.card_name}"
-            Image:
-                size_hint: 1., 0.8
-                source: ""
-                allow_stretch: True
-                texture: card_edit.card_image.texture if card_edit.card_image is not None else card_edit.card_image
-
     TabbedPanelItem:
         text: 'Settings'
         on_release: app.panel_settings()
-        # Button:
-        #     text: 'App Settings'
-        #     on_release: app.open_settings()

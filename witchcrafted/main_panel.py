@@ -7,7 +7,12 @@ class MainPanel(TabbedPanel):
     """The main root panel."""
 
     selected_card_id = ObjectProperty(None, allownone=True)
+
     card_view_tab = ObjectProperty(None)
-    card_edit_tab = ObjectProperty(None)
     card_view = ObjectProperty(None)
+
+    card_edit_tab = ObjectProperty(None)
     card_edit = ObjectProperty(None)
+
+    project_tab = ObjectProperty(None)
+    project_view = ObjectProperty(None)

@@ -1,0 +1,17 @@
+<CardView>:
+    id: card_view
+    on_scroll_y: self.scroll_data()
+    viewclass: 'CardPanel'
+
+    card_grid: card_grid
+    num_of_cards: 0
+    num_of_columns: 4
+    num_of_rows: 4
+
+    RecycleGridLayout:
+        id: card_grid
+        cols: card_view.num_of_columns
+        size_hint_y: None
+        height: self.minimum_height
+        default_size_hint: 1, None
+        default_size: 1, 400
