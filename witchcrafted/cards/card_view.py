@@ -34,6 +34,10 @@ class CardView(RecycleView):
             print(e)
             raise e
 
+    def reset_panels(self):
+        """Reset the panels by resetting their card IDs."""
+        self.refresh_from_data()
+
     def fill_data(self, num_of_rows):
         """Fill so many rows of data."""
         df = LoadData.main_cards_data()

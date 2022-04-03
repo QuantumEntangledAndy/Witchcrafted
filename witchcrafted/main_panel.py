@@ -9,3 +9,5 @@ class MainPanel(TabbedPanel):
     selected_card_id = ObjectProperty(None, allownone=True)
     card_view_tab = ObjectProperty(None)
     card_edit_tab = ObjectProperty(None)
+    card_view = ObjectProperty(None)
+    card_edit = ObjectProperty(None)

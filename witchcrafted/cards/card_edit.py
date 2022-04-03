@@ -3,11 +3,15 @@
 from kivy.uix.gridlayout import GridLayout
 from kivy.properties import ObjectProperty
 from kivy.core.image import Image as CoreImage
+from kivy.app import App
+from PIL import Image as PilImage
+
 import io
 import asyncio
 
 from witchcrafted.utils import Async
 from witchcrafted.cards.card_data import CardData
+from witchcrafted.dialogs import LoadDialog, SaveDialog
 
 
 class CardEdit(GridLayout):
@@ -40,6 +44,37 @@ class CardEdit(GridLayout):
 
     def export_image(self):
         """Export the image."""
+        Async().async_task(self.export_image_async())
+
+    async def export_image_async(self):
+        """Export the image async."""
+        app = App.get_running_app()
+        start_path = app.config.get("paths", "output")
+        file_path = await SaveDialog.show(
+            extensions=[".jpg", ".jpeg", ".png"], start_path=start_path
+        )
+        if file_path:
+            async with self._card_lock:
+                card_data = CardData(self.card_id)
+                image = await card_data.get_image()
+                image.save(file_path)
 
     def import_image(self):
         """Import an image."""
+        Async().async_task(self.import_image_async())
+
+    async def import_image_async(self):
+        """Import an image async."""
+        app = App.get_running_app()
+        start_path = app.config.get("paths", "output")
+        file_paths = await LoadDialog.show(
+            extensions=[".jpg", ".jpeg", ".png"], start_path=start_path
+        )
+        if file_paths:
+            file_path = file_paths[0]
+            async with self._card_lock:
+                image = PilImage.open(file_path)
+                card_data = CardData(self.card_id)
+                await card_data.set_image(image)
+            await self.async_update_card(self.card_id)
+            app.root.card_view.reset_panels()

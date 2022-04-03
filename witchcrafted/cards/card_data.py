@@ -9,6 +9,7 @@ from pathlib import Path
 import pandas as pd
 import threading
 import asyncio
+import PIL
 
 from kivy.app import App
 
@@ -119,6 +120,7 @@ class CardData:
                     )
 
         self.data = cls._card_data_store[card_id]
+        self.data["edited"] = False
 
     async def get_name(self):
         """Get the card name."""
@@ -134,3 +136,12 @@ class CardData:
                         lambda: LoadData.image(self.card_id)
                     )
         return self.data["image"]
+
+    async def set_image(self, image):
+        """Set the image."""
+        if "image" in self.data:
+            current_size = image.size
+            if current_size != image.size:
+                image = image.resize(current_size, PIL.Image.BICUBIC)
+        self.data["image"] = image
+        self.data["edited"] = True

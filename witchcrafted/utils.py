@@ -118,6 +118,14 @@ class Async(object):
         except Exception as e:
             raise e
 
+    def async_future(self):
+        """Create an async future."""
+        return self.loop.create_future()
+
+    def async_finish_future(self, future, value):
+        """Finish an async future."""
+        return self.loop.call_soon_threadsafe(future.set_result, value)
+
     def thread_fire(self, task):
         """Run an thread task on the pool but don't handle a handle to it."""
         if self.excecutor is not None:

@@ -26,10 +26,16 @@ class CardPanel(ButtonBehavior, GridLayout):
 
     def on_card_id(self, instance, new_card_id):
         """Act on card id changing."""
-        Async().async_task(self.async_update_card(new_card_id))
+        self.card_id = new_card_id
+        self.update_card()
 
-    async def async_update_card(self, new_card_id):
+    def update_card(self):
+        """Update the card."""
+        Async().async_task(self.async_update_card())
+
+    async def async_update_card(self):
         """Async update data from card_id."""
+        new_card_id = self.card_id
         async with self._card_lock:
             card_data = CardData(new_card_id)
             self.card_name = await card_data.get_name()
