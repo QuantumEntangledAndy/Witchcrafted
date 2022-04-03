@@ -4,6 +4,9 @@
 #: import CardEdit witchcrafted.cards.card_edit
 #: import MainPanel witchcrafted.main_panel
 
+#: include witchcrafted/view/card_panel.kv
+#: include witchcrafted/view/file_dialogs.kv
+
 MainPanel:
     id: main_panel
     size_hint: 1., 1.
@@ -15,6 +18,12 @@ MainPanel:
     card_edit_tab: card_edit_tab
     card_view: card_view
     card_edit: card_edit
+
+    TabbedPanelItem:
+        id: project_tab
+        text: 'Project'
+
+
 
     TabbedPanelItem:
         id: card_view_tab
@@ -80,94 +89,3 @@ MainPanel:
         # Button:
         #     text: 'App Settings'
         #     on_release: app.open_settings()
-
-
-<CardPanel>:
-    cols: 1
-    rows: 3
-    id: card_panel
-    image: image
-
-    card_id: None
-    card_image: None
-    card_name: None
-
-    on_release: app.select_for_edit(self.card_id)
-
-    Label:
-        size_hint_y: 0.1
-        text: f"{card_panel.card_id}"
-    Label:
-        size_hint_y: 0.1
-        text: f"{card_panel.card_name}" if card_panel.card_name is not None else "Loading"
-
-    Image:
-        id: image
-        source: ""
-        allow_stretch: True
-        texture: card_panel.card_image.texture if card_panel.card_image is not None else card_panel.card_image
-
-
-
-<LoadDialog>:
-    future: None
-    cols: 1
-    rows: 3
-    select_multiple: False
-    filechooser: filechooser
-
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            size_hint: (1., 0.95)
-            multiselect: root.select_multiple
-
-        GridLayout:
-            cols: 2
-            rows: 1
-            size_hint: (1., 0.05)
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-
-            Button:
-                text: "Load"
-                disabled: not root.path_valid(filechooser.path, filechooser.selection)
-                on_release: root.load(filechooser.path, filechooser.selection)
-
-<SaveDialog>:
-    text_input: text_input
-    future: None
-    cols: 1
-    rows: 3
-    filechooser: filechooser
-
-    BoxLayout:
-        size: root.size
-        pos: root.pos
-        orientation: "vertical"
-        FileChooserListView:
-            id: filechooser
-            size_hint: (1., 0.9)
-            on_selection: text_input.text = self.selection and self.selection[0] or ''
-
-        TextInput:
-            id: text_input
-            size_hint: (1., 0.05)
-            multiline: False
-
-        GridLayout:
-            size_hint: (1, 0.05)
-            cols: 2
-            rows: 1
-            Button:
-                text: "Cancel"
-                on_release: root.cancel()
-
-            Button:
-                text: "Save"
-                disabled: not root.path_valid(filechooser.path, text_input.text)
-                on_release: root.save(filechooser.path, text_input.text)
