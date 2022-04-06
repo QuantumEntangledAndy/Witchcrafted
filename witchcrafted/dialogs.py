@@ -120,6 +120,7 @@ class SaveDialog(GridLayout):
         open_directory=False,
         extensions=[],
         start_path=None,
+        start_file=None,
     ):
         """Show the load menu and await it's reply."""
         if start_path is None:
@@ -127,7 +128,6 @@ class SaveDialog(GridLayout):
         start_path = Path(start_path)
         if not start_path.is_dir():
             start_path = start_path.parent
-
         future = Async().async_future()
         result = {}
         popup = Popup(
@@ -154,6 +154,8 @@ class SaveDialog(GridLayout):
             extensions=extensions,
         )
         content.filechooser.path = f"{start_path}"
+        if start_file:
+            content.text_input.text = start_file
         popup.content = content
 
         def on_dismiss(instance):

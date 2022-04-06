@@ -51,7 +51,9 @@ class CardEdit(GridLayout):
         app = App.get_running_app()
         start_path = app.config.get("paths", "output")
         file_path = await SaveDialog.show(
-            extensions=[".jpg", ".jpeg", ".png"], start_path=start_path
+            extensions=[".jpg", ".jpeg", ".png"],
+            start_path=start_path,
+            start_file=f"{self.card_id}.png",
         )
         if file_path:
             async with self._card_lock:

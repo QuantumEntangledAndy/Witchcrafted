@@ -10,8 +10,10 @@ import pandas as pd
 import threading
 import asyncio
 import PIL
+import io
 
 from kivy.app import App
+from kivy.core.image import Image as CoreImage
 
 from witchcrafted.utils import Async
 
@@ -106,6 +108,17 @@ class CardData:
         self.card_id = card_id
         self.update_data()
 
+    @classmethod
+    def forget_all(cls):
+        """Remove all loaded card data."""
+        with cls._lock:
+            cls._card_data_store.clear()
+
+    @classmethod
+    def edited_card(cls):
+        """Get IDs of all edited cards."""
+        return [k for (k, v) in cls._card_data_store.items() if v.get("edited", False)]
+
     def update_data(self):
         """Get or load from global csv data."""
         cls = type(self)
@@ -114,10 +127,8 @@ class CardData:
             with cls._lock:
                 if card_id not in cls._card_data_store:
                     df = LoadData.main_cards_data()
-                    df = LoadData.main_cards_data()
-                    cls._card_data_store[card_id] = (
-                        df[(df["Card ID"] == card_id)].iloc[0].to_dict()
-                    )
+                    data = df[(df["Card ID"] == card_id)].iloc[0].to_dict()
+                    cls._card_data_store[card_id] = data
 
         self.data = cls._card_data_store[card_id]
         self.data["edited"] = False
@@ -130,12 +141,27 @@ class CardData:
         """Get the image."""
         if "image" not in self.data:
             cls = type(self)
+            image = await Async().async_thread(lambda: LoadData.image(self.card_id))
             async with cls._async_lock:
                 if "image" not in self.data:
-                    self.data["image"] = await Async().async_thread(
-                        lambda: LoadData.image(self.card_id)
-                    )
+                    self.data["image"] = image
         return self.data["image"]
+
+    async def get_core_image(self):
+        """Get the image in CoreImage format."""
+        if "core_image" not in self.data:
+            image = await self.get_image()
+            if image:
+                buf = io.BytesIO()
+                image.save(buf, format="PNG")
+                buf.seek(0)
+                card_image = CoreImage(buf, ext="png")
+
+                cls = type(self)
+                async with cls._async_lock:
+                    if "core_image" not in self.data:
+                        self.data["core_image"] = card_image
+        return self.data.get("core_image", None)
 
     async def set_image(self, image):
         """Set the image."""
@@ -145,3 +171,4 @@ class CardData:
                 image = image.resize(current_size, PIL.Image.BICUBIC)
         self.data["image"] = image
         self.data["edited"] = True
+        self.data.pop("core_image")

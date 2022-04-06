@@ -2,9 +2,7 @@
 
 from kivy.uix.gridlayout import GridLayout
 from kivy.properties import ObjectProperty
-from kivy.core.image import Image as CoreImage
 from kivy.uix.behaviors.button import ButtonBehavior
-import io
 import asyncio
 
 from witchcrafted.cards.card_data import CardData
@@ -39,9 +37,6 @@ class CardPanel(ButtonBehavior, GridLayout):
         async with self._card_lock:
             card_data = CardData(new_card_id)
             self.card_name = await card_data.get_name()
-            image = await card_data.get_image()
-            if image is not None:
-                buf = io.BytesIO()
-                image.save(buf, format="PNG")
-                buf.seek(0)
-                self.card_image = CoreImage(buf, ext="png")
+            core_image = await card_data.get_core_image()
+            if core_image is not None:
+                self.card_image = core_image

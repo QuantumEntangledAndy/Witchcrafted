@@ -2,6 +2,10 @@
     cols: 1
     rows: 3
 
+    id: project_view
+
+    project: None
+
     GridLayout:
         cols: 2
         rows: 2
@@ -16,6 +20,7 @@
             multiline: False
             size_hint: (0.8, None)
             height: 60
+            on_text: project_view.project.name = self.text if project_view.project else None
 
         Label:
             text: "Description: "
@@ -24,18 +29,24 @@
         TextInput:
             multiline: True
             size_hint: (0.8, 0.8)
+            on_text: project_view.project.description = self.text if project_view.project else None
 
     GridLayout:
         cols: 2
-        rows: 1
+        rows: 2
         size_hint: (1, 0.2)
 
         Button:
             text: "Save"
-
-            on_release: self.save_project()
+            on_release: project_view.save_project()
 
         Button:
-            text: "Discard Changes"
+            text: "Load"
+            on_release: project_view.save_project()
 
-            on_release: self.discard_project()
+        Button:
+            text: "Revert Changes"
+            on_release: project_view.revert_project()
+        Button:
+            text: "Commit Changes"
+            on_release: project_view.commit_project()
