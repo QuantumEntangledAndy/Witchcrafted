@@ -27,9 +27,11 @@ class LoadDialog(GridLayout):
         """Check if paths is valid."""
         if not selections and not self.open_directory:
             return False
-        if len(selections) > 1 and not self.select_multiple:
+        elif selections and self.open_directory:
             return False
-        if self.extensions:
+        elif len(selections) > 1 and not self.select_multiple:
+            return False
+        elif self.extensions:
             lower_extensions = list(map(lambda item: item.lower(), self.extensions))
             return not all(
                 map(
@@ -109,9 +111,13 @@ class SaveDialog(GridLayout):
         """Check if paths is valid."""
         if not file_name and not self.open_directory:
             return False
-        if self.extensions or not Path(file_name).suffix:
+        elif file_name and self.open_directory:
+            return False
+        elif self.extensions and Path(file_name).suffix:
             lower_extensions = list(map(lambda item: item.lower(), self.extensions))
             return Path(file_name).suffix.lower() in lower_extensions
+        elif self.extensions and not Path(file_name).suffix:
+            return Path(file_name).with_suffix(self.extensions[0])
         return True
 
     @classmethod
