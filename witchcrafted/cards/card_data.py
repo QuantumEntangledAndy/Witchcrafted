@@ -11,6 +11,7 @@ import threading
 import asyncio
 import PIL
 import io
+import imagehash
 
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
@@ -165,10 +166,14 @@ class CardData:
 
     async def set_image(self, image):
         """Set the image."""
-        if "image" in self.data:
-            current_size = image.size
-            if current_size != image.size:
-                image = image.resize(current_size, PIL.Image.BICUBIC)
-        self.data["image"] = image
-        self.data["edited"] = True
-        self.data.pop("core_image")
+        old_image = await self.get_image()
+        old_hash = imagehash.phash(old_image)
+        new_hash = imagehash.phash(image)
+        if old_hash != new_hash:
+            if "image" in self.data:
+                current_size = image.size
+                if current_size != image.size:
+                    image = image.resize(current_size, PIL.Image.BICUBIC)
+            self.data["image"] = image
+            self.data["edited"] = True
+            self.data.pop("core_image")
