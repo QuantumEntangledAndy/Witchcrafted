@@ -102,3 +102,9 @@ class ProjectData:
             for card_id in card_images:
                 with zip_ob.open(f"cards/{card_id}/image.png", mode="r") as fo:
                     output.edits[card_id]["image"] = PIL.open(fo, "PNG")
+
+    def commit(self):
+        """Commit changes to disk."""
+        for card_id in CardData.edited_card():
+            card_data = CardData(card_id)
+            card_data.commit()

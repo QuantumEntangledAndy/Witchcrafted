@@ -96,6 +96,61 @@ class LoadData:
                     return data.image
         return None
 
+    @classmethod
+    def save_image(cls, card_id, image):
+        """Save an image using pandas data and a card id."""
+        df = cls.cards_data()
+        app = App.get_running_app()
+        root_source_dir = Path(app.config.get("paths", "source"))
+        root_dir = Path(app.config.get("paths", "output"))
+        root_dir.mkdir(exist_ok=True)
+
+        card_data = df.loc[df["Card ID"] == card_id].iloc[0].to_dict()
+        top_level_folder = card_data["Folder Name"]
+        top_level_folder.mkdir(exist_ok=True)
+
+        tcg_file_name = card_data["File, TCG"]
+        ocg_file_name = card_data["File, OCG"]
+
+        tcg_file_prefix = tcg_file_name[0:2]
+        source_file_path_tcg = root_source_dir.joinpath(
+            top_level_folder, tcg_file_prefix, tcg_file_name
+        )
+
+        ocg_file_prefix = ocg_file_name[0:2]
+        source_file_path_ocg = root_source_dir.joinpath(
+            top_level_folder, ocg_file_prefix, ocg_file_name
+        )
+
+        file_path_tcg = root_dir.joinpath(
+            top_level_folder, tcg_file_prefix, tcg_file_name
+        )
+        file_path_ocg = root_dir.joinpath(
+            top_level_folder, ocg_file_prefix, ocg_file_name
+        )
+
+        save_tos = {}
+        if source_file_path_tcg.exists() and source_file_path_tcg.is_file():
+            save_tos[source_file_path_tcg] = file_path_tcg
+        if source_file_path_ocg.exists() and source_file_path_ocg.is_file():
+            save_tos[source_file_path_ocg] = file_path_ocg
+
+        for source, dest in save_tos.items():
+            env = UnityPy.load(f"{source}")
+            for obj in env.objects:
+                if obj.type.name in ["Texture2D"]:
+                    data = obj.read()
+                    path = obj.container
+                    if path is None:
+                        path = data.name
+                    resouce_name = Path(path).stem
+                    card_id = str(card_id)
+                    if resouce_name == card_id:
+                        data.image = image.convert("RGBA")
+                        data.save()
+                        dest.parent.mkdir(exist_ok=True)
+                        dest.write_bytes(env.files[0].save())
+
 
 class CardData:
     """Data of an individual card."""
@@ -118,7 +173,11 @@ class CardData:
     @classmethod
     def edited_card(cls):
         """Get IDs of all edited cards."""
-        return [k for (k, v) in cls._card_data_store.items() if v.get("edited", False)]
+        return [
+            k
+            for (k, v) in cls._card_data_store.items()
+            if any(v.get("edited", {}).values())
+        ]
 
     def update_data(self):
         """Get or load from global csv data."""
@@ -132,7 +191,7 @@ class CardData:
                     cls._card_data_store[card_id] = data
 
         self.data = cls._card_data_store[card_id]
-        self.data["edited"] = False
+        self.data["edited"] = {}
 
     async def get_name(self):
         """Get the card name."""
@@ -171,9 +230,15 @@ class CardData:
         new_hash = imagehash.phash(image)
         if old_hash != new_hash:
             if "image" in self.data:
-                current_size = image.size
+                current_size = old_image.size
                 if current_size != image.size:
                     image = image.resize(current_size, PIL.Image.BICUBIC)
             self.data["image"] = image
-            self.data["edited"] = True
+            self.data["edited"]["image"] = True
             self.data.pop("core_image")
+
+    async def commit(self):
+        """Save changes to disk."""
+        if self.data["edited"]["image"]:
+            image = await self.get_image()
+            await Async().async_thread(lambda: LoadData.save_image(self.card_id, image))
