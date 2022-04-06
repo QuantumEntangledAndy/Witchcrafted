@@ -4,9 +4,13 @@ The infinite scrolling card view.
 Cards are selectable for edit.
 """
 
+import asyncio
+
 from kivy.uix.recycleview import RecycleView
 from kivy.properties import ObjectProperty, NumericProperty
-from witchcrafted.cards.card_data import LoadData
+
+from witchcrafted.cards.card_data import LoadData, CardData
+from witchcrafted.utils import Async
 
 
 class CardView(RecycleView):
@@ -53,8 +57,20 @@ class CardView(RecycleView):
                 "card_name": None,
             }
 
-        data = map(
-            map_data,
-            df.iterrows(),
+        data = list(
+            map(
+                map_data,
+                df.iterrows(),
+            )
         )
+        Async().async_fire(self.pre_load(data))
         self.data.extend(data)
+
+    async def pre_load(self, data):
+        """Start preloading any data."""
+        for datum in data:
+            card_id = datum["card_id"]
+            if card_id:
+                card_data = CardData(card_id)
+                await card_data.get_core_image()
+                await asyncio.sleep(0.2)
