@@ -70,7 +70,7 @@ class CardEdit(GridLayout):
         app = App.get_running_app()
         start_path = app.config.get("paths", "output")
         file_paths = await LoadDialog.show(
-            extensions=[".jpg", ".jpeg", ".png"], start_path=start_path
+            extensions=[".jpg", ".jpeg", ".png", ".bmp"], start_path=start_path
         )
         if file_paths:
             file_path = file_paths[0]

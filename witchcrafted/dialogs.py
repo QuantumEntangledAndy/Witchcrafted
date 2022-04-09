@@ -33,7 +33,7 @@ class LoadDialog(GridLayout):
             return False
         elif self.extensions:
             lower_extensions = list(map(lambda item: item.lower(), self.extensions))
-            return not all(
+            return all(
                 map(
                     lambda item: Path(item).suffix.lower() in lower_extensions,
                     selections,
@@ -68,7 +68,7 @@ class LoadDialog(GridLayout):
         def load(path, files):
             """Load it."""
             if files:
-                files = list(map(lambda item: Path(item), files))
+                files = list(map(lambda item: Path(path) / Path(item).name, files))
             else:
                 files = [Path(path)]
             result["files"] = files
@@ -113,11 +113,11 @@ class SaveDialog(GridLayout):
             return False
         elif file_name and self.open_directory:
             return False
-        elif self.extensions and Path(file_name).suffix:
+
+        file_path = Path(path) / Path(file_name) if file_name else Path(path)
+        if self.extensions and file_path.suffix:
             lower_extensions = list(map(lambda item: item.lower(), self.extensions))
-            return Path(file_name).suffix.lower() in lower_extensions
-        elif self.extensions and not Path(file_name).suffix:
-            return Path(file_name).with_suffix(self.extensions[0])
+            return file_path.suffix.lower() in lower_extensions
         return True
 
     @classmethod
@@ -145,7 +145,7 @@ class SaveDialog(GridLayout):
         def save(path, filename):
             """Save it."""
             if filename:
-                file_path = Path(filename)
+                file_path = Path(path) / Path(filename)
                 if not file_path.suffix and extensions:
                     file_path = file_path.with_suffix(f"{extensions[0]}")
             else:

@@ -1,10 +1,13 @@
+#: import ProjectData witchcrafted.project.project_data.ProjectData
 <ProjectView>:
     cols: 1
     rows: 3
 
     id: project_view
+    name_input: name_input
+    description_input: description_input
 
-    project: None
+    project: ProjectData()
 
     GridLayout:
         cols: 2
@@ -17,19 +20,21 @@
             height: 60
 
         TextInput:
+            id: name_input
             multiline: False
             size_hint: (0.8, None)
             height: 60
-            on_text: project_view.project.name = self.text if project_view.project else None
+            on_text: project_view.project.name = self.text
 
         Label:
             text: "Description: "
             size_hint: (0.2, 0.8)
 
         TextInput:
+            id: description_input
             multiline: True
             size_hint: (0.8, 0.8)
-            on_text: project_view.project.description = self.text if project_view.project else None
+            on_text: project_view.project.description = self.text
 
     GridLayout:
         cols: 2
@@ -42,7 +47,7 @@
 
         Button:
             text: "Load"
-            on_release: project_view.save_project()
+            on_release: project_view.load_project()
 
         Button:
             text: "Revert Changes"

@@ -97,12 +97,15 @@ class LoadData:
         return None
 
     @classmethod
-    def save_image(cls, card_id, image):
+    def save_image(cls, card_id, image, project_name):
         """Save an image using pandas data and a card id."""
         df = cls.cards_data()
         app = App.get_running_app()
         root_source_dir = Path(app.config.get("paths", "source"))
         root_dir = Path(app.config.get("paths", "output"))
+        root_dir.mkdir(exist_ok=True)
+
+        root_dir = root_dir.joinpath(project_name)
         root_dir.mkdir(exist_ok=True)
 
         card_data = df.loc[df["Card ID"] == card_id].iloc[0].to_dict()
@@ -171,7 +174,7 @@ class CardData:
             cls._card_data_store.clear()
 
     @classmethod
-    def edited_card(cls):
+    def edited_cards(cls):
         """Get IDs of all edited cards."""
         return [
             k
@@ -188,10 +191,11 @@ class CardData:
                 if card_id not in cls._card_data_store:
                     df = LoadData.main_cards_data()
                     data = df[(df["Card ID"] == card_id)].iloc[0].to_dict()
+                    data["edited"] = {}
+
                     cls._card_data_store[card_id] = data
 
         self.data = cls._card_data_store[card_id]
-        self.data["edited"] = {}
 
     async def get_name(self):
         """Get the card name."""
@@ -235,10 +239,22 @@ class CardData:
                     image = image.resize(current_size, PIL.Image.BICUBIC)
             self.data["image"] = image
             self.data["edited"]["image"] = True
-            self.data.pop("core_image")
+            try:
+                self.data.pop("core_image")
+            except KeyError:
+                pass
 
-    async def commit(self):
+    async def commit(self, project_name):
         """Save changes to disk."""
-        if self.data["edited"]["image"]:
+        if self.data["edited"]:
             image = await self.get_image()
-            await Async().async_thread(lambda: LoadData.save_image(self.card_id, image))
+            await Async().async_thread(
+                lambda: LoadData.save_image(self.card_id, image, project_name)
+            )
+
+    def edited(self, kind=None):
+        """Check if data is edited."""
+        if kind:
+            return self.data.get("edited", {}).get(kind, False)
+        else:
+            return any(self.data.get("edited", {}).values())

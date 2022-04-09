@@ -1,3 +1,4 @@
+#: import Path pathlib.Path
 <LoadDialog>:
     future: None
     cols: 1
@@ -41,7 +42,7 @@
         FileChooserListView:
             id: filechooser
             size_hint: (1., 0.9)
-            on_selection: text_input.text = self.selection and self.selection[0] or ''
+            on_selection: text_input.text = Path(self.selection and self.selection[0] or '').name
 
         TextInput:
             id: text_input

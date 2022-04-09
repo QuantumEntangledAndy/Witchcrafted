@@ -58,6 +58,15 @@ def make_logger(name):
 
 logger = make_logger(__name__)
 
+sanatize_map = dict((ord(char), None) for char in r'\/*?:"<>|')
+sanatize_map[" "] = "_"
+
+
+def sanatize_text(text):
+    """Sanatize a string for saveing."""
+    text = text.lower()
+    return text.translate(sanatize_map)
+
 
 class Async(object):
     """Object to handle asyncio and threadpool threads."""

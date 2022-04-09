@@ -28,15 +28,11 @@ class CardView(RecycleView):
 
     def scroll_data(self):
         """Fill the grid with more cards."""
-        try:
-            top = (self.card_grid.top - self.y) / self.card_grid.height
-            if self.scroll_y * self.card_grid.height < self.height / 2:
-                self.fill_data(10)
-                y = top + self.height
-                self.scroll_y = y / self.card_grid.height
-        except Exception as e:
-            print(e)
-            raise e
+        top = (self.card_grid.top - self.y) / self.card_grid.height
+        if self.scroll_y * self.card_grid.height < self.height / 2:
+            self.fill_data(4)
+            y = top + self.height
+            self.scroll_y = y / self.card_grid.height
 
     def reset_panels(self):
         """Reset the panels by resetting their card IDs."""

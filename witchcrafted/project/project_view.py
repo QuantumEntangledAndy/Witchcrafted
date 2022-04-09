@@ -13,12 +13,13 @@ from witchcrafted.dialogs import LoadDialog, SaveDialog
 class ProjectView(GridLayout):
     """The project view."""
 
-    project = ObjectProperty(None, allownone=True)
+    project = ObjectProperty(ProjectData(), allownone=False)
+    name_input = ObjectProperty(None)
+    description_input = ObjectProperty(None)
 
     def __init__(self, **kwargs):
         """Init the view."""
         super().__init__(**kwargs)
-        self.project = ProjectData()
 
     def save_project(self):
         """Save the project."""
@@ -29,12 +30,10 @@ class ProjectView(GridLayout):
         if self.project:
             app = App.get_running_app()
             start_path = app.config.get("paths", "output")
-            file_paths = await SaveDialog.show(
+            file_path = await SaveDialog.show(
                 extensions=[".mdmod"], start_path=start_path
             )
-            if file_paths:
-                file_path = file_paths[0]
-                await self.project.store()
+            if file_path:
                 await self.project.save(file_path)
 
     def load_project(self):
@@ -52,13 +51,27 @@ class ProjectView(GridLayout):
             if project:
                 self.project = project
                 CardData.forget_all()
-                await self.apply()
+                if self.name_input:
+                    self.name_input.text = project.name
+                if self.description_input:
+                    self.description_input.text = project.description
+                await project.apply()
 
     def revert_project(self):
         """Revert all edited changes to those saved in the project."""
+        Async().async_fire(self.async_revert_project())
+
+    async def async_revert_project(self):
+        """Revert all edited changes to those saved in the project."""
         CardData.forget_all()
         if self.project:
-            Async().async_fire(self.project.apply())
+            await self.project.apply()
 
     def commit_project(self):
         """Apply all edits to game files."""
+        Async().async_fire(self.async_commit_project())
+
+    async def async_commit_project(self):
+        """Apply all edits to game files."""
+        await self.project.store()
+        await self.project.commit()
