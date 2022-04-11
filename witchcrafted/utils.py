@@ -148,7 +148,7 @@ def get_steam_paths():
                     logger.info(f"Steam found at: {steam_path}")
                     steam_paths.append(steam_path)
     # Check for  wineskin apps that contain steam (macos)
-    root = home.root()
+    root = Path(home.root)
     with root.joinpath("Applications") as applications_root:
         if applications_root.exists():
             for app in applications_root.iterdir():
@@ -216,7 +216,7 @@ def get_md_paths():
         md_path = steam_path.joinpath("steamapps", "common", "Yu-Gi-Oh!  Master Duel")
         if md_path.exists():
             logger.info(f"Masterduel found at {md_path}")
-            md_paths.append(md_paths)
+            md_paths.append(md_path)
     return md_paths
 
 
