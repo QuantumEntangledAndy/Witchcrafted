@@ -6,9 +6,23 @@
   {
     "type": "path",
     "title": "Source Dir",
-    "desc": "Files that are to be edited, should contain a 0000 folder at it's root",
+    "desc": "Sources files that are to be edited, should contain a 0000 folder at it's root",
     "section": "paths",
     "key": "source"
+  },
+  {
+    "type": "path",
+    "title": "Data Dir",
+    "desc": "Folder that contains the data.unity3d file, used for names and descriptions",
+    "section": "paths",
+    "key": "datasource"
+  },
+  {
+    "type": "path",
+    "title": "Asset Dir",
+    "desc": "Folder that contains AssetBundle directory at it's root, used for cards that are prebundled and not downloaded",
+    "section": "paths",
+    "key": "assetsource"
   },
   {
     "type": "path",

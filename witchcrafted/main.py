@@ -13,13 +13,15 @@ import kivy
 from kivy.app import App as KivyApp
 from kivy.properties import ObjectProperty
 from kivy.clock import Clock
+import re
 
 from docopt import docopt
 import ctypes
 from colorama import init as colorama_init
 from pathlib import Path
 
-from witchcrafted.utils import Async, make_logger, set_up_logger
+from witchcrafted.utils import Async, make_logger, set_up_logger, get_md_paths
+
 
 kivy.require("2.1.0")
 
@@ -59,9 +61,39 @@ class WitchcraftedApp(KivyApp):
 
     def build_config(self, config):
         """Prepare the default config."""
-        config.setdefaults(
-            "paths", {"source": "./masterduel/source", "output": "./masterduel/output"}
-        )
+        md_paths = get_md_paths()
+        if md_paths:
+            md_path = md_paths[0]
+            local_dir = md_path.joinpath("LocalData")
+            profile_dir = None
+            for profile in local_dir.iterdir():
+                if profile.name != "00000000" and re.match(
+                    r"^[0-9a-f]+$", profile.name
+                ):
+                    profile_dir = profile
+            if not profile_dir:
+                profile_dir = Path("./masterduel/source")
+            masterduel_data = md_path.joinpath("masterduel_Data")
+            streaming_assets = masterduel_data.joinpath("StreamingAssets")
+            config.setdefaults(
+                "paths",
+                {
+                    "source": f"{profile_dir}",
+                    "datasource": f"{masterduel_data}",
+                    "assetsource": f"{streaming_assets}",
+                    "output": "./masterduel/output",
+                },
+            )
+        else:
+            config.setdefaults(
+                "paths",
+                {
+                    "source": "./masterduel/source",
+                    "datasource": "./masterduel/source",
+                    "assetsource": "./masterduel/source",
+                    "output": "./masterduel/output",
+                },
+            )
         config.setdefaults(
             "app",
             {"debug": False},

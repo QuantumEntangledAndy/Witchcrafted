@@ -5,6 +5,12 @@ import asyncio
 import concurrent.futures
 import colorlog
 from colorlog import ColoredFormatter
+from pathlib import Path
+
+try:
+    import winreg
+except Exception:
+    winreg = None
 
 
 def multiline_strip(text):
@@ -66,6 +72,152 @@ def sanatize_text(text):
     """Sanatize a string for saveing."""
     text = text.lower()
     return text.translate(sanatize_map)
+
+
+def get_steam_paths():
+    """Find a steam path with masterduel."""
+    steam_paths = []
+    # ==== WINDOWS ====
+    # Check for steam via windows registery
+    if winreg is not None:
+        try:
+            hkey = winreg.OpenKey(
+                winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Valve\Steam"
+            )
+        except Exception:
+            hkey = None
+        if not hkey:
+            try:
+                hkey = winreg.OpenKey(
+                    winreg.HKEY_LOCAL_MACHINE,
+                    r"SOFTWARE\Valve.PlayOnLinux/wineprefix/PrefixName\Steam",
+                )
+            except Exception:
+                hkey = None
+        if hkey:
+            try:
+                steam_path = winreg.QueryValueEx(hkey, "InstallPath")
+            except Exception:
+                steam_path = None
+            if steam_path:
+                steam_path = Path(steam_path)
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+    # ==== LINUX ====
+    home = Path.home()
+    # Check for playonlinux
+    with home.joinpath(".PlayOnLinux", "wineprefix") as playonlinux:
+        if playonlinux.exists():
+            logger.info("Play on linux found")
+            for prefix in playonlinux.iterdir():
+                steam_path = prefix.joinpath("drive_c", "Program Files (x86)", "Steam")
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+                steam_path = prefix.joinpath("drive_c", "Program Files", "Steam")
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+
+    with home.joinpath(".local", "share", "bottles", "bottles") as bottles:
+        if bottles.exists():
+            logger.info("Bottles found")
+            for prefix in bottles.iterdir():
+                steam_path = prefix.joinpath("drive_c", "Program Files (x86)", "Steam")
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+                steam_path = prefix.joinpath("drive_c", "Program Files", "Steam")
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+
+    # ==== MACOS ====
+    # Playonmac
+    with home.joinpath("Library", "PlayOnMac", "wineprefix") as playonmac:
+        if playonmac.exists():
+            logger.info("Play on mac found")
+            for prefix in playonmac.iterdir():
+                steam_path = prefix.joinpath("drive_c", "Program Files (x86)", "Steam")
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+                steam_path = prefix.joinpath("drive_c", "Program Files", "Steam")
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+    # Check for  wineskin apps that contain steam (macos)
+    root = home.root()
+    with root.joinpath("Applications") as applications_root:
+        if applications_root.exists():
+            for app in applications_root.iterdir():
+                steam_path = app.joinpath(
+                    "Contents", "Resources", "drive_c", "Program Files (x86)", "Steam"
+                )
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+                steam_path = app.joinpath(
+                    "Contents", "Resources", "drive_c", "Program Files", "Steam"
+                )
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+    with home.joinpath("Applications") as applications_home:
+        if applications_home.exists():
+            for app in applications_home.iterdir():
+                steam_path = app.joinpath(
+                    "Contents", "Resources", "drive_c", "Program Files (x86)", "Steam"
+                )
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+                steam_path = app.joinpath(
+                    "Contents", "Resources", "drive_c", "Program Files", "Steam"
+                )
+                if steam_path.exists():
+                    logger.info(f"Steam found at: {steam_path}")
+                    steam_paths.append(steam_path)
+
+    # ### LINUX/MACOS ######
+    # Check for wine
+    with home.joinpath(".wine") as wine_path:
+        if wine_path.exists():
+            logger.info("Wine found")
+            steam_path = wine_path.joinpath("drive_c", "Program Files (x86)", "Steam")
+            if steam_path.exists():
+                logger.info(f"Steam found at: {steam_path}")
+                steam_paths.append(steam_path)
+            steam_path = wine_path.joinpath("drive_c", "Program Files", "Steam")
+            if steam_path.exists():
+                logger.info(f"Steam found at: {steam_path}")
+                steam_paths.append(steam_path)
+    # Check for wine64
+    with home.joinpath(".wine64") as wine64_path:
+        if wine_path.exists():
+            logger.info("Wine64 found")
+            steam_path = wine64_path.joinpath("drive_c", "Program Files (x86)", "Steam")
+            if steam_path.exists():
+                logger.info(f"Steam found at: {steam_path}")
+                steam_paths.append(steam_path)
+            steam_path = wine64_path.joinpath("drive_c", "Program Files", "Steam")
+            if steam_path.exists():
+                logger.info(f"Steam found at: {steam_path}")
+                steam_paths.append(steam_path)
+    return steam_paths
+
+
+def get_md_paths():
+    """Get all masterduel path directories."""
+    md_paths = []
+    steam_paths = get_steam_paths()
+    for steam_path in steam_paths:
+        md_path = steam_path.joinpath("steamapps", "common", "Yu-Gi-Oh!  Master Duel")
+        if md_path.exists():
+            logger.info(f"Masterduel found at {md_path}")
+            md_paths.append(md_paths)
+    return md_paths
 
 
 class Async(object):
