@@ -6,6 +6,7 @@ import concurrent.futures
 import colorlog
 from colorlog import ColoredFormatter
 from pathlib import Path
+import traceback
 
 try:
     import winreg
@@ -29,36 +30,43 @@ def clamp(num, min_value, max_value):
     return max(min(num, max_value), min_value)
 
 
+log_colorized = False
+
+
 def set_up_logger(logger):
     """
     Set up the logger to use color.
 
     Only call this once.
     """
-    formatter = ColoredFormatter(
-        "%(log_color)s%(levelname)-8s%(reset)s %(white)s%(message)s",
-        datefmt="None",
-        reset=True,
-        log_colors={
-            "DEBUG": "cyan",
-            "INFO": "green",
-            "WARNING": "yellow",
-            "ERROR": "red",
-            "CRITICAL": "red,bg_white",
-        },
-        secondary_log_colors={},
-        style="%",
-    )
-    handler = colorlog.StreamHandler()
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-    logger.setLevel("DEBUG")
+    global log_colorized
+    if not log_colorized:
+        log_colorized = True
+        formatter = ColoredFormatter(
+            "%(log_color)s%(levelname)-8s%(reset)s %(white)s%(message)s",
+            datefmt="None",
+            reset=True,
+            log_colors={
+                "DEBUG": "cyan",
+                "INFO": "green",
+                "WARNING": "yellow",
+                "ERROR": "red",
+                "CRITICAL": "red,bg_white",
+            },
+            secondary_log_colors={},
+            style="%",
+        )
+        handler = colorlog.StreamHandler()
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel("DEBUG")
     return logger
 
 
 def make_logger(name):
     """Make a logger."""
     logger = colorlog.getLogger(name)
+    logger = set_up_logger(logger)
     return logger
 
 
@@ -245,9 +253,10 @@ class Async(object):
             if isinstance(e, KeyboardInterrupt):
                 pass
             else:
-                logger.error(f"Caught exception: {e}", stack_info=True)
-                logger.info("Shutting down from exception.")
-                raise e
+                extype = type(e)
+                tb = "".join(traceback.format_exception(None, e, e.__traceback__))
+                logger.error(f"Error: {extype}\n{e}\n\n{tb}")
+
         else:
             logger.warn(context["message"])
 

@@ -11,10 +11,9 @@ from packaging.version import parse as version_parse
 from kivy.app import App
 
 from witchcrafted.cards.card_data import CardData
-from witchcrafted.utils import sanatize_text, make_logger, set_up_logger
+from witchcrafted.utils import sanatize_text, make_logger
 
 logger = make_logger(__file__)
-set_up_logger(logger)
 
 PROJECT_VERSION = "1.0.0"
 

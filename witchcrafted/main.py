@@ -20,7 +20,7 @@ import ctypes
 from colorama import init as colorama_init
 from pathlib import Path
 
-from witchcrafted.utils import Async, make_logger, set_up_logger, get_md_paths
+from witchcrafted.utils import Async, make_logger, get_md_paths
 
 
 kivy.require("2.1.0")
@@ -36,7 +36,6 @@ except Exception:  # Windows 8 or before
 
 
 logger = make_logger("witchcrafted")
-set_up_logger(logger)
 
 
 class WitchcraftedApp(KivyApp):
@@ -63,7 +62,7 @@ class WitchcraftedApp(KivyApp):
         """Prepare the default config."""
         md_paths = get_md_paths()
         if md_paths:
-            md_path = md_paths[0]
+            md_path = []  # md_paths[0]
             local_dir = md_path.joinpath("LocalData")
             profile_dir = None
             for profile in local_dir.iterdir():
