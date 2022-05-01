@@ -1,17 +1,40 @@
 <CardView>:
     id: card_view
-    on_scroll_y: self.scroll_data()
-    viewclass: 'CardPanel'
+    card_scroll: card_scroll
+    filter_box: filter_box
 
-    card_grid: card_grid
-    num_of_cards: 0
-    num_of_columns: 4
-    num_of_rows: 4
+    cols: 1
+    rows: 2
 
-    RecycleGridLayout:
-        id: card_grid
-        cols: card_view.num_of_columns
-        size_hint_y: None
-        height: self.minimum_height
-        default_size_hint: 1, None
-        default_size: 1, 400
+    GridLayout:
+        size_hint_y: 0.05
+        cols: 2
+        rows: 1
+
+        Label:
+            size_hint_x: 0.25
+            text: "Filter: "
+        TextInput:
+            size_hint_x: 0.75
+            id: filter_box
+
+            on_text: card_view.filter_cards(self.text)
+
+    CardScroll:
+        id: card_scroll
+        size_hint_y: 0.95 
+
+        on_scroll_y: self.scroll_data()
+        viewclass: 'CardPanel'
+
+        card_grid: card_grid
+        num_of_columns: 4
+        num_of_rows: 4
+
+        RecycleGridLayout:
+            id: card_grid
+            cols: card_scroll.num_of_columns
+            size_hint_y: None
+            height: self.minimum_height
+            default_size_hint: 1, None
+            default_size: 1, 400

@@ -62,7 +62,7 @@ class WitchcraftedApp(KivyApp):
         """Prepare the default config."""
         md_paths = get_md_paths()
         if md_paths:
-            md_path = []  # md_paths[0]
+            md_path = md_paths[0]
             local_dir = md_path.joinpath("LocalData")
             profile_dir = None
             for profile in local_dir.iterdir():
