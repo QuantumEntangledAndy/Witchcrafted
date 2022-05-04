@@ -19,8 +19,9 @@ from docopt import docopt
 import ctypes
 from colorama import init as colorama_init
 from pathlib import Path
+import platform
 
-from witchcrafted.utils import Async, make_logger, get_md_paths
+from witchcrafted.utils import Async, make_logger, get_md_paths, data_dir
 
 
 kivy.require("2.1.0")
@@ -34,20 +35,32 @@ try:  # Before Windows 8.1
 except Exception:  # Windows 8 or before
     pass
 
+if platform.system() == "Windows":
+    import os
+
+    os.environ["KIVY_GL_BACKEND"] = "angle_sdl2"
+
 
 logger = make_logger("witchcrafted")
+
+data_path = data_dir()
+kv_directory_path = data_path / "view"
+kv_directory_str = f"{kv_directory_path}"
+kivy.resources.resource_add_path(f"{data_path}")
+kivy.resources.resource_add_path(kv_directory_str)
 
 
 class WitchcraftedApp(KivyApp):
     """Main GUI app."""
 
-    kv_directory = "witchcrafted/view"
+    kv_directory = kv_directory_str
 
     selected_card_id = ObjectProperty(None, allownone=True)
 
     def __init__(self, opts):
         """Init the app."""
         super().__init__()
+        logger.info(f"View directory: {self.kv_directory}")
 
     async def async_run(self, *args, **kwargs):
         """Run the loop async."""

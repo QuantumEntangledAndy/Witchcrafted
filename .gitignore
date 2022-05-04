@@ -2,3 +2,6 @@ masterduel
 .DS_Store
 **/__pycache__
 witchcrafted/witchcrafted.ini
+build
+dist
+witchcrafter.spec

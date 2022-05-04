@@ -7,6 +7,7 @@ import colorlog
 from colorlog import ColoredFormatter
 from pathlib import Path
 import traceback
+import sys
 
 try:
     import winreg
@@ -226,6 +227,17 @@ def get_md_paths():
             logger.info(f"Masterduel found at {md_path}")
             md_paths.append(md_path)
     return md_paths
+
+
+def data_dir():
+    """Get the TLD of the data."""
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        tld = Path(sys._MEIPASS)
+    else:
+        tld = Path.cwd()
+        if not (tld / "assets").exists():
+            tld = Path(__file__).parent.parent
+    return tld
 
 
 class Async(object):

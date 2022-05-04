@@ -11,12 +11,12 @@ import threading
 import asyncio
 import PIL
 import io
-import imagehash
 
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
 
-from witchcrafted.utils import Async
+from witchcrafted.utils import Async, data_dir
+from witchcrafted.imagehash import perceptiveHash
 
 
 class LoadData:
@@ -33,7 +33,9 @@ class LoadData:
         if cls.__df is None:
             with cls._lock:
                 if cls.__df is None:
-                    cls.__df = pd.read_csv("assets/card_list.csv")
+                    cls.__df = pd.read_csv(
+                        data_dir().joinpath("assets", "card_list.csv")
+                    )
         return cls.__df
 
     @classmethod
@@ -230,8 +232,8 @@ class CardData:
     async def set_image(self, image):
         """Set the image."""
         old_image = await self.get_image()
-        old_hash = imagehash.phash(old_image)
-        new_hash = imagehash.phash(image)
+        old_hash = perceptiveHash(old_image)
+        new_hash = perceptiveHash(image)
         if old_hash != new_hash:
             if "image" in self.data:
                 current_size = old_image.size

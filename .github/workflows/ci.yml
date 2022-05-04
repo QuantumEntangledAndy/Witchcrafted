@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        python-version: [3.10.4]
+        poetry-version: [1.1.12]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2.0.0
+        with:
+          poetry-version: ${{ matrix.poetry-version }}
+      - name: Install dep
+        shell: bash
+        run: |
+          poetry install
+      - name: Build Win
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          export KIVY_GL_BACKEND=angle_sdl2
+          poetry run pyinstaller -y --clean --windowed --name Witchcrafted \
+                  --add-data "assets;assets" \
+                  --add-data "view;view" \
+                  --icon icon/icon.png \
+                  witchcrafted/main.py
+      - name: Build Mac
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          poetry run pyinstaller -y --clean --windowed --name Witchcrafted \
+                  --add-data "assets:assets" \
+                  --add-data "view:view" \
+                  --icon icon/icon.png \
+                  --osx-bundle-identifier "qe.witchcrafted" \
+                  witchcrafted/main.py
+      - name: Make DMG
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          pushd dist || exit 1
+          hdiutil create ./Witchcrafted.dmg -srcfolder Witchcrafted.app -ov || exit 1
+          popd || exit 1
+      - name: Upload artifact Dmg
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-${{ matrix.os }}
+          path: "dist/Witchcrafted.dmg"
+      - name: Upload artifact Exe
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-${{ matrix.os }}
+          path: "dist/Witchcrafted"
+  ###################
+  # Create Releases #
+  ###################
+  create_release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs:
+      - "build"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Git tags too
+        shell: bash
+        run: |
+          git fetch --prune --unshallow --tags
+          echo exit code $?
+          git tag --list
+      - name: Check if tagged
+        id: check_tag
+        shell: bash
+        run: |
+          TAG_NAME="$(git tag --points-at HEAD)"
+          echo "TAG_NAME: ${TAG_NAME}"
+          echo "::set-output name=TAG_NAME::${TAG_NAME}"
+      - name: Download Windows Exe
+        if: ${{ steps.check_tag.outputs.TAG_NAME }}
+        uses: actions/download-artifact@v2
+        with:
+          name: release-windows-latest
+          path: witchcrafted
+      - name: Package Windows files
+        if: ${{ steps.check_tag.outputs.TAG_NAME }}
+        shell: bash
+        run: |
+          sudo apt-get install -y zip
+          pushd witchcrafted || exit 1
+          zip -r ../Witchcrafted_windows.zip ./
+          popd || exit 1
+      - name: Download Macos App
+        if: ${{ steps.check_tag.outputs.TAG_NAME }}
+        uses: actions/download-artifact@v2
+        with:
+          name: release-macos-latest
+      - name: Rename mac dmg
+        if: ${{ steps.check_tag.outputs.TAG_NAME }}
+        shell: bash
+        run: |
+          mv "Witchcrafted.dmg" "Witchcrafted_macos.dmg"
+      - name: Release
+        if: ${{ steps.check_tag.outputs.TAG_NAME }}
+        uses: softprops/action-gh-release@v1
+        with:
+          body: |
+            Witchcrafted ${{ steps.check_tag.outputs.TAG_NAME  }}
+          tag_name: ${{ steps.check_tag.outputs.TAG_NAME }}
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: true
+          name: Release ${{ steps.check_tag.outputs.TAG_NAME  }}
+          files: |
+            Witchcrafted_windows.zip
+            Witchcrafted_macos.dmg

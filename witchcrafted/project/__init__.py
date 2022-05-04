@@ -1,5 +1,5 @@
 """Project related code."""
 
-from . import project_view
+from . import project_view, project_data
 
-__all__ = [project_view]
+__all__ = [project_view, project_data]
